@@ -263,6 +263,12 @@ org.gradle.java.home=<path to a Java installation>
 
 It will be respected when starting the daemon for your build, regardless of the JVM Gradle Profiler uses.
 
+### Daemon GC health polling
+
+By default, Gradle Profiler starts the build daemon with `-Dorg.gradle.daemon.gc.polling.disabled=true`.
+Without this, the daemon may decide to expire and restart itself between iterations based on its GC health checks, which changes the daemon PID and fails the run with `Multiple Gradle daemons were used`.
+To re-enable polling, set `org.gradle.daemon.gc.polling.disabled=false` explicitly (for example via `-Dorg.gradle.daemon.gc.polling.disabled=false` or a scenario's `system-properties`).
+
 ### Configuring JVM running Gradle Profiler itself
 
 Gradle Profiler is packaged via the standard [application](https://docs.gradle.org/current/userguide/application_plugin.html) plugin.

@@ -37,6 +37,12 @@ import static org.gradle.profiler.Phase.MEASURE;
 import static org.gradle.profiler.Phase.WARM_UP;
 
 public class GradleScenarioInvoker extends ScenarioInvoker<GradleScenarioDefinition, GradleBuildInvocationResult> {
+    /**
+     * Gradle daemon system property that disables the daemon's GC health polling.
+     * See org.gradle.launcher.daemon.server.health.gc.DefaultGarbageCollectionMonitor in Gradle.
+     */
+    private static final String DISABLE_DAEMON_GC_POLLING_PROPERTY = "org.gradle.daemon.gc.polling.disabled";
+
     private final DaemonControl daemonControl;
     private final PidInstrumentation pidInstrumentation;
 
@@ -107,6 +113,13 @@ public class GradleScenarioInvoker extends ScenarioInvoker<GradleScenarioDefinit
                 allBuildsJvmArgs.add("-D" + entry.getKey() + "=" + entry.getValue());
             }
             allBuildsJvmArgs.add("-Dorg.gradle.profiler.scenario=" + scenario.getName());
+            // Disable the daemon's GC health polling by default. Otherwise the daemon may decide to
+            // expire and restart between iterations, which changes the daemon PID and makes the run
+            // fail with "Multiple Gradle daemons were used". Users can opt back in by explicitly
+            // setting the property in their scenario.
+            if (allBuildsJvmArgs.stream().noneMatch(arg -> arg.startsWith("-D" + DISABLE_DAEMON_GC_POLLING_PROPERTY + "="))) {
+                allBuildsJvmArgs.add("-D" + DISABLE_DAEMON_GC_POLLING_PROPERTY + "=true");
+            }
             allBuildsJvmArgsCalculator.calculateJvmArgs(allBuildsJvmArgs);
             logJvmArgs(allBuildsJvmArgs);
 
